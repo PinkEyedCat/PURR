@@ -164,7 +164,7 @@ switch (topic.ToLower())
                 }
                 else
                 {
-                    Console.WriteLine($"\nUnable to LOG-IN - System Returned:{success}" + "\n");
+                    Console.WriteLine($"\nUnable to LOG-IN - System Returned: {success}" + "\n");
                 }
 
                 var posts = await e621Client.GetPostsAsync(tags, 1, HowMany);
