@@ -108,8 +108,7 @@ static string getBetween(string strSource, string strStart, string strEnd)
 
 #endregion
 
-//Little Comment
-
+//Salutations and question of what are the user Seaching for
 Console.WriteLine("How do you do Fellow Degenerate?");
 Console.WriteLine("What are you searching today? - Pools? Posts? we have it my friend. - Type below which one" + "\n");
 var topic = Console.ReadLine();
@@ -256,43 +255,62 @@ switch (topic.ToLower())
                     }
                 }
 
-                var check_path = $"{SessionOutput}/{tags}";
 
-                if(Directory.GetFiles(check_path).Length < HowMany)
-                {
-                    Console.WriteLine("\nIt seems that not all images have been dowloaded Maybe one or more tags no declared in the research(General Post Tags)\nare in the Global Blacklist from E621, it is recommended to log-in to access said tags/content\n\nNote:This also maybe be a problem from our end since we don't support WEBM file format\nSo it maybe is not listing it for download(since we check for image-only files)\nMy Sincere Apologies - Edgar");
-                }
-                else
-                {
-                    Console.WriteLine("\nEverything downloaded, have a good... moment for yourself");
-                    Console.WriteLine("See you soon, restart the app if you want to search again");
-                }
+                //This part will define which action the system should take.
+                Console.WriteLine("\nWhat you want to do now??\n");
+                var following = Console.ReadLine().ToLower();
 
-                try
+                switch (following)
                 {
-                    // Create the file, or overwrite if the file exists.
-                    using (FileStream fs = File.Create(LogPath))
-                    {
+                    case "close":
+
+                        var check_path = $"{SessionOutput}/{tags}";
+
                         if (Directory.GetFiles(check_path).Length < HowMany)
                         {
-                            var InfoAmount = Directory.GetFiles(check_path).Length;
-                            byte[] info = new UTF8Encoding(true).GetBytes($"{DateTime.Now.ToString()} - Searched for: {tags} downloaded {InfoAmount}(From the {HowMany} requested.)\nStatus = Not everything was downloaded.");
-                            // Add some information to the file.
-                            fs.Write(info, 0, info.Length);
+                            Console.WriteLine("\nIt seems that not all images have been dowloaded Maybe one or more tags no declared in the research(General Post Tags)\nare in the Global Blacklist from E621, it is recommended to log-in to access said tags/content\n\nNote:This also maybe be a problem from our end since we don't support WEBM file format\nSo it maybe is not listing it for download(since we check for image-only files)\nMy Sincere Apologies - Edgar");
                         }
                         else
                         {
-                            var InfoAmount = Directory.GetFiles(check_path).Length;
-                            byte[] info = new UTF8Encoding(true).GetBytes($"{DateTime.Now.ToString()} - Searched for: {tags} downloaded {InfoAmount}(From the {HowMany} requested.)\nStatus = Everything was downloaded.");
-                            // Add some information to the file.
-                            fs.Write(info, 0, info.Length);
+                            Console.WriteLine("\nEverything downloaded, have a good... moment for yourself");
+                            Console.WriteLine("See you soon, restart the app if you want to search again");
                         }
-                    }
-                }
 
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
+                        try
+                        {
+                            // Create the file, or overwrite if the file exists.
+                            using (FileStream fs = File.Create(LogPath))
+                            {
+                                if (Directory.GetFiles(check_path).Length < HowMany)
+                                {
+                                    var InfoAmount = Directory.GetFiles(check_path).Length;
+                                    byte[] info = new UTF8Encoding(true).GetBytes($"{DateTime.Now.ToString()} - Searched for: {tags} downloaded {InfoAmount}(From the {HowMany} requested.)\nStatus = Not everything was downloaded.");
+                                    // Add some information to the file.
+                                    fs.Write(info, 0, info.Length);
+                                }
+                                else
+                                {
+                                    var InfoAmount = Directory.GetFiles(check_path).Length;
+                                    byte[] info = new UTF8Encoding(true).GetBytes($"{DateTime.Now.ToString()} - Searched for: {tags} downloaded {InfoAmount}(From the {HowMany} requested.)\nStatus = Everything was downloaded.");
+                                    // Add some information to the file.
+                                    fs.Write(info, 0, info.Length);
+                                }
+                            }
+                        }
+
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+                        break;
+                    case "restart":
+                        //Searches for the executable path and start it
+                        System.Diagnostics.Process.Start(Environment.ProcessPath);
+
+                        // Closes the current process
+                        Environment.Exit(0);
+                        break;
+
                 }
             }
         }
@@ -309,30 +327,13 @@ switch (topic.ToLower())
         Console.WriteLine("Currently in Progress...");
 
         //This create a Client... this time for pools.
-        var e621ClientPools = new E621ClientBuilder()
+        /* var e621ClientPools = new E621ClientBuilder()
                     .WithUserAgent("PURR - An E621 CLI DOWNLOADER (WIP)", "0.1.5b", "Pervertamura", "NONE")
                     .WithMaximumConnections(E621Constants.MaximumConnectionsLimit)
                     .WithRequestInterval(E621Constants.MinimumRequestInterval)
                     .Build();
         var pools = await e621ClientPools.GetPoolsAsync(1, limit: E621Constants.PoolsMaximumLimit);
-
-        for(int i = 0; i < pools.Count; i++)
-        {
-            var pool = pools.ElementAt(i);
-            if (pool.Name == "Homeless Dog by Ponporio")
-            {
-                Console.WriteLine($"Pool Name: {pool.Name}");
-                Console.WriteLine($"Pool ID: {pool.Id}");
-                Console.WriteLine($"Pool Description: {pool.Description}");
-                Console.WriteLine($"Last Updated: {pool.UpdatedAt}");
-                Console.WriteLine($"Pages IDs: ");
-                for (int p = 0; p < pool.PostIds.Count; p++)
-                {
-                    Console.WriteLine(pool.PostIds.ElementAt(p));
-                }
-            }
-
-        }
+        */
 
         break;
 }
