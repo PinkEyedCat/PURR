@@ -117,6 +117,154 @@ var topic = Console.ReadLine();
 switch (topic.ToLower())
 {
 
+    case "single_posts":
+
+        //This checks for the Category(Posts/Pools) directory, if does not exists, creates and sets it.
+        if (Directory.Exists($"{SessionOutput}/Single Posts"))
+        {
+            Directory.CreateDirectory($"{SessionOutput}/Single Posts");
+            SessionOutput = $"{SessionOutput}/Single Posts";
+        }
+        else
+        {
+            SessionOutput = $"{SessionOutput}/Single Posts";
+        }
+
+        //This will take the User's topic and ask for which Tags and for How Many posts to search for
+        Console.WriteLine($"\nSo... {topic} huh?");
+        Console.WriteLine("What ya having? - Type what you search below UwU" + "\n");
+        var ID = Int32.Parse(Console.ReadLine());
+
+        //This will ask for a confirmation of the User's Option
+        Console.WriteLine($"\nIDs to search = {ID}");
+        Console.WriteLine("Confirm?(Yes/No)" + "\n");
+        var confirmSingle = Console.ReadLine();
+
+        if (confirmSingle.ToLower() == "yes")
+        {
+
+            if (ID != null)
+            {
+
+                var e621ClientSingle = new E621ClientBuilder()
+                    .WithUserAgent("PURR - An E621 CLI DOWNLOADER (WIP)", "0.1.5b", "Pervertamura", "NONE")
+                    .WithMaximumConnections(E621Constants.MaximumConnectionsLimit)
+                    .WithRequestInterval(E621Constants.MinimumRequestInterval)
+                    .Build();
+
+                var post = await e621ClientSingle.GetPostAsync(ID);
+
+                    if (post.File != null && post.File.FileExtension != "webm")
+                    {
+                        #region This gather the Post images url and convert them to stream/bitmap.
+
+                        HttpWebRequest request = (HttpWebRequest)WebRequest.Create(post.File.Location);
+                        HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                        Stream receiveStream = response.GetResponseStream();
+
+                        Bitmap mybitmap = new Bitmap(receiveStream);
+
+                        #endregion
+
+                        //If the stream has any content in it
+                        if (mybitmap != null)
+                        {
+
+                            #region File Variables
+
+                            var FileExtensionID = "." + post.File.FileExtension;
+                            ImageFormat Format = null;
+                            var default_path = $"{SessionOutput}/";
+                            if (!Directory.Exists(default_path))
+                            {
+                                Directory.CreateDirectory(default_path);
+                                default_path = $"{SessionOutput}/";
+                            }
+                            else
+                            {
+                                default_path = $"{SessionOutput}/";
+                            }
+
+                            #endregion
+
+                            //Switch for the Image Format in mybitmap.save();
+                            switch ((post.File.FileExtension))
+                            {
+
+                                case "png":
+                                    Format = ImageFormat.Png;
+                                    break;
+                                case "jpg":
+                                    Format = ImageFormat.Jpeg;
+                                    break;
+                                case "gif":
+                                    Format = ImageFormat.Gif;
+                                    break;
+
+                            }
+
+                            Console.WriteLine($"Saving: {default_path}{post.Id}{FileExtensionID}");
+
+                            //Saves the image
+                            mybitmap.Save(default_path + post.Id + FileExtensionID, Format);
+
+                        }
+
+                        receiveStream.Close();
+                        request.Abort();
+                        response.Close();
+                        e621ClientSingle.Dispose();
+
+                    }
+                }
+
+                //This part will define which action the system should take.
+                Console.WriteLine("\nWhat you want to do now??\n");
+                var following = Console.ReadLine().ToLower();
+
+                switch (following)
+                {
+                    case "close":
+
+                        try
+                        {
+                            // Create the file, or overwrite if the file exists.
+                            using (FileStream fs = File.Create(LogPath))
+                            {
+
+                                byte[] info = new UTF8Encoding(true).GetBytes($"{DateTime.Now.ToString()} - File {ID} downloaded with no problem");
+                                        // Add some information to the file.
+                                fs.Write(info, 0, info.Length);
+                            }
+                        }
+
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine(ex.ToString());
+                        }
+
+                        Console.WriteLine("See you soon, restart the app if you want to search again");
+
+                        break;
+                    case "restart":
+                        //Searches for the executable path and start it
+                        System.Diagnostics.Process.Start(Environment.ProcessPath);
+
+                        // Closes the current process
+                        Environment.Exit(0);
+                        break;
+
+                }
+
+            }
+        else
+        {
+            Console.WriteLine("See you soon, restart the app if you want to search again");
+            Environment.Exit(0);
+        }
+
+        break;
+
     case "posts":
             
             //This checks for the Category(Posts/Pools) directory, if does not exists, creates and sets it.
@@ -326,14 +474,17 @@ switch (topic.ToLower())
 
         Console.WriteLine("Currently in Progress...");
 
-        //This create a Client... this time for pools.
-        /* var e621ClientPools = new E621ClientBuilder()
+         //This create a Client... this time for pools.
+         var e621ClientPools = new E621ClientBuilder()
                     .WithUserAgent("PURR - An E621 CLI DOWNLOADER (WIP)", "0.1.5b", "Pervertamura", "NONE")
                     .WithMaximumConnections(E621Constants.MaximumConnectionsLimit)
                     .WithRequestInterval(E621Constants.MinimumRequestInterval)
                     .Build();
+
+        //This retrieves the first page of the Pools Section
         var pools = await e621ClientPools.GetPoolsAsync(1, limit: E621Constants.PoolsMaximumLimit);
-        */
+        
+
 
         break;
 }
