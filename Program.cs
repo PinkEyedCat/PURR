@@ -104,9 +104,11 @@ static string getBetween(string strSource, string strStart, string strEnd)
         Console.WriteLine("\n--------------------------------------------------");
         Console.WriteLine("--------------------------------------------------\n");
 
-    #endregion
+#endregion
 
 #endregion
+
+var state = "run";
 
 //Salutations and question of what are the user Seaching for
 Console.WriteLine("How do you do Fellow Degenerate?");
@@ -172,18 +174,18 @@ switch (topic.ToLower())
 
                             #region File Variables
 
-                            var FileExtensionID = "." + post.File.FileExtension;
-                            ImageFormat Format = null;
-                            var default_path = $"{SessionOutput}/";
-                            if (!Directory.Exists(default_path))
-                            {
-                                Directory.CreateDirectory(default_path);
-                                default_path = $"{SessionOutput}/";
-                            }
-                            else
-                            {
-                                default_path = $"{SessionOutput}/";
-                            }
+                                var FileExtensionID = "." + post.File.FileExtension;
+                                ImageFormat Format = null;
+                                var default_path = $"{SessionOutput}/";
+                                if (!Directory.Exists(default_path))
+                                {
+                                    Directory.CreateDirectory(default_path);
+                                    default_path = $"{SessionOutput}/";
+                                }
+                                else
+                                {
+                                    default_path = $"{SessionOutput}/";
+                                }
 
                             #endregion
 
@@ -473,18 +475,154 @@ switch (topic.ToLower())
     case "pools":
 
         Console.WriteLine("Currently in Progress...");
+        int page = 1;
 
-         //This create a Client... this time for pools.
-         var e621ClientPools = new E621ClientBuilder()
+        //This checks for the Category(Posts/Pools) directory, if does not exists, creates and sets it.
+        if (Directory.Exists($"{SessionOutput}/Pools"))
+        {
+            Directory.CreateDirectory($"{SessionOutput}/Pools");
+            SessionOutput = $"{SessionOutput}/Pools";
+            Console.WriteLine($"Pools are being downloaded to: {SessionOutput}");
+        }
+        else
+        {
+            SessionOutput = $"{SessionOutput}/Pools";
+            Console.WriteLine($"Pools are being downloaded to: {SessionOutput}");
+        }
+
+        //This create a Client... this time for pools.
+        var e621ClientPools = new E621ClientBuilder()
                     .WithUserAgent("PURR - An E621 CLI DOWNLOADER (WIP)", "0.1.5b", "Pervertamura", "NONE")
                     .WithMaximumConnections(E621Constants.MaximumConnectionsLimit)
                     .WithRequestInterval(E621Constants.MinimumRequestInterval)
                     .Build();
 
-        //This retrieves the first page of the Pools Section
-        var pools = await e621ClientPools.GetPoolsAsync(1, limit: E621Constants.PoolsMaximumLimit);
-        
+        //This retrieves the first page of the Pools Section (by default "page" is 1)
+        var pools = await e621ClientPools.GetPoolsAsync(page, limit: E621Constants.PoolsMaximumLimit);
 
+        //This is a pretty neat loop, while the the player don't declare "end" for the loop state the system will run on that for ever
+        //Maybe will try to implement this in the Posts sections.... seems more effective code-wise.
+        while (state != "end")
+        {
+            if (state == "run")
+            {
+                Console.WriteLine("Retrieving Pools....\n\n");
+                for (int i = 0; i < pools.Count; i++)
+                {
+                    var pool = pools.ElementAt(i);
+                    Console.WriteLine(pool.Name + "\n");
+                    state = "pause";
+                }
+            }
+            else
+            {
+                Console.WriteLine("\n\nWhat now?");
+                var action = Console.ReadLine().ToLower();
 
+                switch (action)
+                {
+                    case "p.increase":
+                        page++;
+                        pools = await e621ClientPools.GetPoolsAsync(page, limit: E621Constants.PoolsMaximumLimit);
+                        state = "run";
+                        break;
+                    case "retrieve":
+                        var name = Console.ReadLine();
+                        for (int i = 0; i < pools.Count; i++)
+                        {
+                            var pool = pools.ElementAt(i);
+                            if (name == pool.Name)
+                            {
+                                Console.WriteLine($"Name: {pool.Name}");
+                                Console.WriteLine($"ID: {pool.Id}");
+                                Console.WriteLine($"Description: {pool.Description}");
+                                Console.WriteLine($"Last Updated At: {pool.UpdatedAt}");
+                            }
+                        }
+                        state = "pause";
+                        break;
+                    case "r.download":
+                        var nametdl = Console.ReadLine();
+
+                        for (int p = 0; p < pools.Count; p++)
+                        {
+                            var pool = pools.ElementAt(p);
+                            if (nametdl == pool.Name)
+                            {
+                                var pgnmb = pool.PostIds.Count;
+                                Console.WriteLine($"Pages to download: {pgnmb}");
+                                for (int pg = 0; pg < pool.PostIds.Count; pg++)
+                                {
+                                    var post = await e621ClientPools.GetPostAsync(pool.PostIds.ElementAt(pg));
+
+                                    if (post.File != null && post.File.FileExtension != "webm")
+                                    {
+                                        #region This gather the Post images url and convert them to stream/bitmap.
+
+                                            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(post.File.Location);
+                                            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                                            Stream receiveStream = response.GetResponseStream();
+
+                                            Bitmap mybitmap = new Bitmap(receiveStream);
+
+                                        #endregion
+
+                                        //If the stream has any content in it
+                                        if (mybitmap != null)
+                                        {
+
+                                            #region File Variables
+
+                                                var FileExtensionID = "." + post.File.FileExtension;
+                                                ImageFormat Format = null;
+                                                var default_path = $"{SessionOutput}/{pool.Name}/";
+                                                if (!Directory.Exists(default_path))
+                                                {
+                                                    Directory.CreateDirectory(default_path);
+                                                    default_path = $"{SessionOutput}/{pool.Name}/";
+                                                }
+                                                else
+                                                {
+                                                    default_path = $"{SessionOutput}/{pool.Name}/";
+                                                }
+
+                                            #endregion
+
+                                            //Switch for the Image Format in mybitmap.save();
+                                            switch ((post.File.FileExtension))
+                                            {
+
+                                                case "png":
+                                                    Format = ImageFormat.Png;
+                                                    break;
+                                                case "jpg":
+                                                    Format = ImageFormat.Jpeg;
+                                                    break;
+                                                case "gif":
+                                                    Format = ImageFormat.Gif;
+                                                    break;
+
+                                            }
+
+                                            Console.WriteLine($"Saving: {default_path}{post.Id}{FileExtensionID}");
+
+                                            //Saves the image
+                                            mybitmap.Save(default_path + post.Id + FileExtensionID, Format);
+
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        
+                        state = "pause";
+                        break;
+                    case "end":
+                        Console.WriteLine("Bye Bye.");
+                        state = "end";
+                        break;
+                }
+            }
+        }
         break;
 }
